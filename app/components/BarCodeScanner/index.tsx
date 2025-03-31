@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import Quagga from "@ericblade/quagga2";
 
 interface BarcodeScannerProps {
-  setCode: (code: string | null) => void;
+  setCode: (code: string) => void;
   open: boolean;
   setOpen: (open: boolean) => void;
 }
@@ -50,7 +50,7 @@ export function BarcodeScanner({
 
         Quagga.onDetected((result) => {
           const code = result.codeResult.code;
-          setCode(code);
+          setCode(code as string);
           setOpen(false);
         });
       } catch (err) {
