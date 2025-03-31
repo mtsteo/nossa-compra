@@ -1,109 +1,84 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import Quagga from "quagga";
+import React, { useEffect } from "react";
+import Quagga from "@ericblade/quagga2";
 
-const PREFIX = "BarcodeScanner";
+interface BarcodeScannerProps {
+  setCode: (code: string | null) => void;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}
 
-export function BarcodeScanner({ setCode, open, setOpen }: any) {
-  const [loading, setLoading] = useState(true);
-
+export function BarcodeScanner({
+  setCode,
+  open,
+  setOpen,
+}: BarcodeScannerProps) {
   useEffect(() => {
-    Quagga.init(
-      {
-        inputStream: {
-          type: "LiveStream",
-          constraints: {
-            width: 640,
-            height: 480,
-            facingMode: "environment",
+    if (!open) return;
+
+    const initQuagga = async () => {
+      try {
+        await Quagga.init(
+          {
+            inputStream: {
+              type: "LiveStream",
+              constraints: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: { ideal: "environment" },
+              },
+              target: document.querySelector("#barcode-scanner") as HTMLElement,
+            },
+            locator: {
+              halfSample: true,
+              patchSize: "large",
+            },
+            numOfWorkers: navigator.hardwareConcurrency || 4,
+            decoder: {
+              readers: ["code_128_reader", "ean_reader", "ean_8_reader"],
+            },
+            locate: true,
           },
-          target: document.querySelector("#barcode-scanner"),
-        },
-        locator: {
-          halfSample: true,
-          patchSize: "large", // x-small, small, medium, large, x-large
-        },
-        numOfWorkers: navigator.hardwareConcurrency,
-        decoder: {
-          readers: ["code_39_reader", "code_128_reader", "ean_reader"],
-        },
-        locate: true,
-        multiple: false,
-        frequency: 10,
-      },
-      (err: any) => {
-        if (err) {
-          return console.log(err);
-        }
-        Quagga.start();
-        return () => {
-          Quagga.stop();
-        };
+          (err) => {
+            if (err) {
+              console.error("Quagga initialization error:", err);
+              return;
+            }
+            Quagga.start();
+          }
+        );
+
+        Quagga.onDetected((result) => {
+          const code = result.codeResult.code;
+          setCode(code);
+          setOpen(false);
+        });
+      } catch (err) {
+        console.error("Camera error:", err);
       }
-    );
+    };
 
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
+    initQuagga();
 
-    Quagga.onProcessed((result: any) => {
-      const drawingCtx = Quagga.canvas.ctx.overlay;
-      const drawingCanvas = Quagga.canvas.dom.overlay;
-
-      if (result) {
-        if (result.boxes) {
-          drawingCtx.clearRect(
-            0,
-            0,
-            Number(drawingCanvas.getAttribute("width")),
-            Number(drawingCanvas.getAttribute("height"))
-          );
-          result.boxes
-            .filter((box: any) => {
-              return box !== result.box;
-            })
-            .forEach((box: any) => {
-              Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, {
-                color: "#E0E0E0",
-                lineWidth: 2,
-              });
-            });
-        }
-
-        if (result.box) {
-          Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, {
-            color: "#00F",
-            lineWidth: 2,
-          });
-        }
-
-        if (result.codeResult && result.codeResult.code) {
-          Quagga.ImageDebug.drawPath(
-            result.line,
-            { x: "x", y: "y" },
-            drawingCtx,
-            { color: "red", lineWidth: 3 }
-          );
-        }
-      }
-    });
-
-    Quagga.onDetected((result: any) => {
-      setCode(result.codeResult.code);
-      setOpen(false);
-      Quagga.offDetected();
-      Quagga.offProcessed();
+    return () => {
       Quagga.stop();
-    });
-  }, [setCode, setOpen]);
-
-  useEffect(() => {
-    if (!open) {
       Quagga.offDetected();
-      Quagga.offProcessed();
-      Quagga.stop();
-    }
-  }, [open]);
+    };
+  }, [open, setCode, setOpen]);
 
-  return <div className="h-80" id="barcode-scanner"></div>;
+  if (!open) return null;
+
+  return (
+    <div className="relative">
+      <div
+        id="barcode-scanner"
+        className="w-full h-80 bg-black rounded-lg overflow-hidden"
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <p className="text-white bg-black bg-opacity-50 p-2 rounded">
+          Aponte para o código de barras
+        </p>
+      </div>
+    </div>
+  );
 }
