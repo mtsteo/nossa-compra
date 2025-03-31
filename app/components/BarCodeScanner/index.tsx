@@ -23,8 +23,8 @@ export function BarcodeScanner({
             inputStream: {
               type: "LiveStream",
               constraints: {
-                width: { ideal: 640 },
-                height: { ideal: 480 },
+                width: { ideal: 960 },
+                height: { ideal: 720 },
                 facingMode: { ideal: "environment" },
               },
               target: document.querySelector("#barcode-scanner") as HTMLElement,
