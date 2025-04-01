@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Quagga from "@ericblade/quagga2";
 
 interface BarcodeScannerProps {
@@ -13,6 +13,18 @@ export function BarcodeScanner({
   open,
   setOpen,
 }: BarcodeScannerProps) {
+  const [zoom, setZoom] = useState(1);
+  const [supportsZoom, setSupportsZoom] = useState(false);
+
+  // Verifica suporte a zoom
+  useEffect(() => {
+    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+      const track = stream.getVideoTracks()[0];
+      setSupportsZoom("zoom" in track.getCapabilities());
+      track.stop();
+    });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
 
@@ -26,6 +38,7 @@ export function BarcodeScanner({
                 width: { ideal: 640 },
                 height: { ideal: 480 },
                 facingMode: { ideal: "environment" },
+                ...(supportsZoom && { advanced: [{ zoom: zoom * 100 }] }),
               },
               target: document.querySelector("#barcode-scanner") as HTMLElement,
             },
@@ -64,21 +77,25 @@ export function BarcodeScanner({
       Quagga.stop();
       Quagga.offDetected();
     };
-  }, [open, setCode, setOpen]);
+  }, [open, setCode, setOpen, zoom, supportsZoom]);
 
   if (!open) return null;
 
   return (
     <div className="relative">
-      <div
-        id="barcode-scanner"
-        className="w-full h-80 bg-black rounded-lg overflow-hidden"
-      />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <p className="text-white bg-black bg-opacity-50 p-2 rounded">
-          Aponte para o código de barras
-        </p>
-      </div>
+      <div id="barcode-scanner" className="w-full h-80 bg-black" />
+
+      {supportsZoom && (
+        <div className="absolute bottom-4 right-4 flex gap-2">
+          <button onClick={() => setZoom((p) => Math.max(1, p - 0.5))}>
+            ➖
+          </button>
+          <span className="text-white">{zoom.toFixed(1)}x</span>
+          <button onClick={() => setZoom((p) => Math.min(3, p + 0.5))}>
+            ➕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
