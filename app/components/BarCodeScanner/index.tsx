@@ -31,7 +31,7 @@ export function BarcodeScanner({
             },
             locator: {
               halfSample: true,
-              patchSize: "large",
+              patchSize: "medium",
             },
             numOfWorkers: navigator.hardwareConcurrency || 4,
             decoder: {
