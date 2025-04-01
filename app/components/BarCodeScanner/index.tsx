@@ -38,7 +38,9 @@ export function BarcodeScanner({
                 width: { ideal: 640 },
                 height: { ideal: 480 },
                 facingMode: { ideal: "environment" },
-                ...(supportsZoom && { advanced: [{ zoom: zoom * 100 }] }),
+                ...(supportsZoom && {
+                  advanced: [{ zoom: zoom * 100 } as any],
+                }),
               },
               target: document.querySelector("#barcode-scanner") as HTMLElement,
             },
