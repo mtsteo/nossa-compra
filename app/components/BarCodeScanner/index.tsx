@@ -6,25 +6,15 @@ interface BarcodeScannerProps {
   setCode: (code: string) => void;
   open: boolean;
   setOpen: (open: boolean) => void;
+  cameraId: any;
 }
 
 export function BarcodeScanner({
   setCode,
   open,
   setOpen,
+  cameraId,
 }: BarcodeScannerProps) {
-  const [zoom, setZoom] = useState(1);
-  const [supportsZoom, setSupportsZoom] = useState(false);
-
-  // Verifica suporte a zoom
-  useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
-      const track = stream.getVideoTracks()[0];
-      setSupportsZoom("zoom" in track.getCapabilities());
-      track.stop();
-    });
-  }, []);
-
   useEffect(() => {
     if (!open) return;
 
@@ -37,20 +27,19 @@ export function BarcodeScanner({
               constraints: {
                 width: { ideal: 640 },
                 height: { ideal: 480 },
-                facingMode: { ideal: "environment" },
-                ...(supportsZoom && {
-                  advanced: [{ zoom: zoom * 100 } as any],
-                }),
+                ...(cameraId && { deviceId: cameraId }),
+                ...(!cameraId && { facingMode: { ideal: "environment" } }),
               },
               target: document.querySelector("#barcode-scanner") as HTMLElement,
             },
             locator: {
               halfSample: true,
               patchSize: "medium",
+              willReadFrequently: true,
             },
             numOfWorkers: navigator.hardwareConcurrency || 4,
             decoder: {
-              readers: ["code_128_reader", "ean_reader", "ean_8_reader"],
+              readers: ["ean_reader"],
             },
             locate: true,
           },
@@ -79,25 +68,13 @@ export function BarcodeScanner({
       Quagga.stop();
       Quagga.offDetected();
     };
-  }, [open, setCode, setOpen, zoom, supportsZoom]);
+  }, [open, setCode, setOpen]);
 
   if (!open) return null;
 
   return (
     <div className="relative">
       <div id="barcode-scanner" className="w-full h-80 bg-black" />
-
-      {supportsZoom && (
-        <div className="absolute bottom-4 right-4 flex gap-2">
-          <button onClick={() => setZoom((p) => Math.max(1, p - 0.5))}>
-            ➖
-          </button>
-          <span className="text-white">{zoom.toFixed(1)}x</span>
-          <button onClick={() => setZoom((p) => Math.min(3, p + 0.5))}>
-            ➕
-          </button>
-        </div>
-      )}
     </div>
   );
 }
