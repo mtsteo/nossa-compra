@@ -6,14 +6,12 @@ interface BarcodeScannerProps {
   setCode: (code: string) => void;
   open: boolean;
   setOpen: (open: boolean) => void;
-  cameraId: any;
 }
 
 export function BarcodeScanner({
   setCode,
   open,
   setOpen,
-  cameraId,
 }: BarcodeScannerProps) {
   useEffect(() => {
     if (!open) return;
@@ -27,8 +25,7 @@ export function BarcodeScanner({
               constraints: {
                 width: { ideal: 640 },
                 height: { ideal: 480 },
-                ...(cameraId && { deviceId: cameraId }),
-                ...(!cameraId && { facingMode: { ideal: "environment" } }),
+                facingMode: { ideal: "user" },
               },
               target: document.querySelector("#barcode-scanner") as HTMLElement,
             },
